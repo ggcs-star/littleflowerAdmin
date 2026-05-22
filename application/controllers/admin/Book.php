@@ -3,13 +3,16 @@
 if (!defined('BASEPATH'))
     exit('No direct script access allowed');
 
-class Book extends Admin_Controller {
+class Book extends Admin_Controller
+{
 
-    function __construct() {
+    function __construct()
+    {
         parent::__construct();
     }
 
-    public function index() {
+    public function index()
+    {
         if (!$this->rbac->hasPrivilege('books', 'can_view')) {
             access_denied();
         }
@@ -25,7 +28,8 @@ class Book extends Admin_Controller {
         $this->load->view('layout/footer');
     }
 
-    public function getall() {
+    public function getall()
+    {
         if (!$this->rbac->hasPrivilege('books', 'can_view')) {
             access_denied();
         }
@@ -35,14 +39,15 @@ class Book extends Admin_Controller {
         $data['title_list'] = 'Book Details';
         $listbook = $this->book_model->getBookwithQty();
         $data['listbook'] = $listbook;
-      
+
 
         $this->load->view('layout/header');
         $this->load->view('admin/book/getall', $data);
         $this->load->view('layout/footer');
     }
 
-    function create() {
+    function create()
+    {
         if (!$this->rbac->hasPrivilege('books', 'can_add')) {
             access_denied();
         }
@@ -75,7 +80,8 @@ class Book extends Admin_Controller {
         }
     }
 
-    function edit($id) {
+    function edit($id)
+    {
         if (!$this->rbac->hasPrivilege('books', 'can_edit')) {
             access_denied();
         }
@@ -112,7 +118,8 @@ class Book extends Admin_Controller {
         }
     }
 
-    function delete($id) {
+    function delete($id)
+    {
         if (!$this->rbac->hasPrivilege('books', 'can_delete')) {
             access_denied();
         }
@@ -121,13 +128,14 @@ class Book extends Admin_Controller {
         redirect('admin/book/getall');
     }
 
-       public function getAvailQuantity() {
+    public function getAvailQuantity()
+    {
 
         $book_id = $this->input->post('book_id');
-        $available=0;
+        $available = 0;
         if ($book_id != "") {
-            $result=$this->bookissue_model->getAvailQuantity($book_id);
-            $available=$result->qty-$result->total_issue;
+            $result = $this->bookissue_model->getAvailQuantity($book_id);
+            $available = $result->qty - $result->total_issue;
         }
         $result_final = array('status' => '1', 'qty' => $available);
         echo json_encode($result_final);
