@@ -958,7 +958,11 @@ class Student extends Admin_Controller {
                         $resultlist = $this->student_model->searchByClassSection($class, $section);
                         $data['resultlist'] = $resultlist;
                         $title = $this->classsection_model->getDetailbyClassSection($data['class_id'], $data['section_id']);
-                        $data['title'] = 'Student Details for ' . $title['class'] . "(" . $title['section'] . ")";
+                     $data['title'] = 'Student Details for ' .
+    ($title['class'] ?? '') .
+    "(" .
+    ($title['section'] ?? '') .
+    ")";
                     }
                 } else if ($search == 'search_full') {
                     $data['searchby'] = "text";
@@ -1124,7 +1128,10 @@ class Student extends Admin_Controller {
                         $resultlist = $this->student_model->disablestudentByClassSection($class, $section);
                         $data['resultlist'] = $resultlist;
                         $title = $this->classsection_model->getDetailbyClassSection($data['class_id'], $data['section_id']);
-                        $data['title'] = 'Student Details for ' . $title['class'] . "(" . $title['section'] . ")";
+                       $class = $title['class'] ?? '';
+$section = $title['section'] ?? '';
+
+$data['title'] = "Student Details for {$class} ({$section})";
                     }
                 } else if ($search == 'search_full') {
                     $data['searchby'] = "text";

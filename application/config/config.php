@@ -24,7 +24,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
   | a PHP script and you can easily do that on your own.
   |
  */
-$config['base_url'] = 'https://admin.littleflowerschool.org.in/smart_school/';
+$config['base_url'] = 'http://localhost:8001';
 
 
 /*
