@@ -24,10 +24,21 @@ class Welcome extends Front_Controller {
     public function index() {
         $setting = $this->frontcms_setting_model->get();
         $this->data['active_menu'] = 'home';
-        $this->data['page_side_bar'] = $setting->is_active_sidebar;
+        $this->data['page_side_bar'] = isset($setting->is_active_sidebar) ? $setting->is_active_sidebar : 0;
         $home_page = $this->config->item('ci_front_home_page_slug');
         $result = $this->cms_program_model->getByCategory($this->banner_content);
-        $this->data['page'] = $this->cms_page_model->getBySlug($home_page);
+        
+        $page = $this->cms_page_model->getBySlug($home_page);
+        if (!$page) {
+            $page = $this->cms_page_model->getBySlug('404-page');
+        }
+        if (!$page) {
+            $page = array(
+                'meta_title' => '', 'meta_keyword' => '', 'meta_description' => '', 'title' => '', 'description' => ''
+            );
+        }
+        $this->data['page'] = $page;
+        
         if (!empty($result)) {
             $this->data['banner_images'] = $this->cms_program_model->front_cms_program_photos($result[0]['id']);
         }
@@ -38,18 +49,22 @@ class Welcome extends Front_Controller {
     public function page($slug) {
         $page = $this->cms_page_model->getBySlug($slug);
         if (!$page) {
-            $this->data['page'] = $this->cms_page_model->getBySlug('404-page');
-        } else {
-
-            $this->data['page'] = $this->cms_page_model->getBySlug($slug);
+            $page = $this->cms_page_model->getBySlug('404-page');
+        }
+        if (!$page) {
+            $page = array(
+                'meta_title' => '', 'meta_keyword' => '', 'meta_description' => '', 'title' => '', 'description' => '',
+                'is_homepage' => 0, 'sidebar' => 0, 'category_content' => ''
+            );
         }
 
+        $this->data['page'] = $page;
 
-        if ($page['is_homepage']) {
+        if (isset($page['is_homepage']) && $page['is_homepage']) {
             redirect('frontend');
         }
         $this->data['active_menu'] = $slug;
-        $this->data['page_side_bar'] = $this->data['page']['sidebar'];
+        $this->data['page_side_bar'] = isset($this->data['page']['sidebar']) ? $this->data['page']['sidebar'] : 0;
         $this->data['page_content_type'] = "";
         if (!empty($this->data['page']['category_content'])) {
             $content_array = $this->data['page']['category_content'];
@@ -178,8 +193,15 @@ class Welcome extends Front_Controller {
         $this->data['active_menu'] = 'home';
         $page = $this->cms_program_model->getBySlug($slug);
 
-        $this->data['page_side_bar'] = $page['sidebar'];
-        $this->data['featured_image'] = $page['feature_image'];
+        if (!$page) {
+            $page = array(
+                'meta_title' => '', 'meta_keyword' => '', 'meta_description' => '', 'title' => '', 'description' => '',
+                'sidebar' => 0, 'feature_image' => ''
+            );
+        }
+
+        $this->data['page_side_bar'] = isset($page['sidebar']) ? $page['sidebar'] : 0;
+        $this->data['featured_image'] = isset($page['feature_image']) ? $page['feature_image'] : '';
         $this->data['page'] = $page;
         $this->load_theme('pages/read');
     }
