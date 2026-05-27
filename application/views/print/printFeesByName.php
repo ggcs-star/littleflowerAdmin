@@ -232,7 +232,6 @@
                                 <address>
                                     <strong><?php echo $feeList->firstname . " " . $feeList->lastname; ?></strong><br>
 
-                                    <?php echo $this->lang->line('father_name'); ?>: <?php echo $student['father_name']; ?><br>
                                     <?php echo $this->lang->line('class'); ?>: <?php echo $feeList->class . " (" . $feeList->section . ")"; ?>
                                 </address>
                             </div>

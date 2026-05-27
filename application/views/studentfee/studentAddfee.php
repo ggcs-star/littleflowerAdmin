@@ -559,6 +559,16 @@ echo ($currency_symbol . number_format($total_amount, 2, '.', ''));
                                 <label class="radio-inline">
                                     <input type="radio" name="payment_mode_fee" value="DD"><?php echo $this->lang->line('dd'); ?>
                                 </label>
+
+                                 <label class="radio-inline">
+                                    <input type="radio" name="payment_mode_fee" value="Swipe">
+                                        Swipe
+                                </label>
+
+                                <label class="radio-inline">
+                                    <input type="radio" name="payment_mode_fee" value="Gpay">
+                                        Gpay
+                                </label>
                                 <span class="text-danger" id="payment_mode_error"></span>
                             </div>
                         </div>

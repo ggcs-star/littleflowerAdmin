@@ -143,6 +143,24 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
                 </section>
             </div>
 
+            <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                            <h4 class="modal-title" id="confirmDeleteModalLabel">Confirmation</h4>
+                        </div>
+                        <div class="modal-body">
+                            <p>Data is already there! Are you sure you want to delete existing records for this class and section before importing?</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->lang->line('cancel'); ?></button>
+                            <button type="button" class="btn btn-danger" id="btnConfirmDelete">Yes, Delete & Import</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <script type="text/javascript">
                 function getSectionByClass(class_id, section_id) {
                     if (class_id != "" && section_id != "") {
@@ -197,6 +215,46 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
                                 $('#section_id').append(div_data);
                             }
                         });
+                    });
+
+                    $('#employeeform').on('submit', function(e) {
+                        var class_id = $('#class_id').val();
+                        var section_id = $('#section_id').val();
+                        var file = $('#file').val();
+                        var form = this;
+
+                        if (!class_id || !section_id || !file) {
+                            return true; 
+                        }
+
+                        if ($(form).data('confirmed')) {
+                            return true;
+                        }
+
+                        e.preventDefault();
+                        var base_url = '<?php echo base_url() ?>';
+                        $.ajax({
+                            url: base_url + 'student/getByClassAndSection',
+                            type: 'GET',
+                            data: {class_id: class_id, section_id: section_id},
+                            dataType: 'json',
+                            success: function(res) {
+                                if (res && res.length > 0) {
+                                    $('#confirmDeleteModal').modal('show');
+                                } else {
+                                    $(form).data('confirmed', true);
+                                    form.submit();
+                                }
+                            }
+                        });
+                    });
+
+                    $('#btnConfirmDelete').click(function() {
+                        var form = $('#employeeform');
+                        $('<input>').attr({ type: 'hidden', name: 'delete_existing', value: 'yes' }).appendTo(form);
+                        $(form).data('confirmed', true);
+                        form.submit();
+                        $('#confirmDeleteModal').modal('hide');
                     });
                 });
             </script>

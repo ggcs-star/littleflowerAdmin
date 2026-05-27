@@ -208,7 +208,7 @@ class Student extends Admin_Controller {
         $setting_result = $this->setting_model->get();
         //$student_categorize = $setting_result[0]["student_categorize"];
         //$data["student_categorize"] = $student_categorize ;
-        $data["student_categorize"] = 'class';
+        $data["student_categorize"] = 'section';
         $session = $this->setting_model->getCurrentSession();
         $student_result = $this->student_model->getRecentRecord();
         $data['studentlist'] = $student_result;
@@ -550,7 +550,7 @@ class Student extends Admin_Controller {
 
             //$setting_result = $this->setting_model->get();
           // $student_categorize = $setting_result[0]["student_categorize"];
-                $student_categorize = 'class';
+                $student_categorize = 'section';
         if($student_categorize == 'class'){
             $section = 0;
                 
@@ -561,6 +561,30 @@ class Student extends Admin_Controller {
             $class_id = $this->input->post('class_id');
             $section_id = $this->input->post('section_id');
             $session = $this->setting_model->getCurrentSession();
+
+            // Delete existing records if confirmed
+            if ($this->input->post('delete_existing') == 'yes' && $this->rbac->hasPrivilege('student', 'can_delete')) {
+                $existing_students = $this->student_model->searchByClassSection($class_id, $section_id);
+                if (!empty($existing_students)) {
+                    foreach ($existing_students as $student) {
+                        // Delete from student_session table
+                        $this->db->where('student_id', $student['id']);
+                        $this->db->where('session_id', $session);
+                        $this->db->delete('student_session');
+
+                        // Delete from students table
+                        $this->db->where('id', $student['id']);
+                        $this->db->delete('students');
+
+                        // Clean up other related records
+                        $this->student_model->remove($student['id']);
+                    }
+                }
+            }
+
+            set_time_limit(0); // Prevent PHP from timing out internally
+            ignore_user_abort(true); // Allow script to finish in background if web-server/browser times out
+            
             if (isset($_FILES["file"]) && !empty($_FILES['file']['name'])) {
                 $ext = pathinfo($_FILES['file']['name'], PATHINFO_EXTENSION);
                 if ($ext == 'csv') {
@@ -575,44 +599,76 @@ class Student extends Admin_Controller {
                             $n = 0;
                             foreach ($result[$i] as $key => $value) {
 
-                                $student_data[$i][$fields[$n]] = $this->encoding_lib->toUTF8($result[$i][$key]);
-
-
+                                if (isset($fields[$n])) {
+                            
+                                    $parsed_value = trim($this->encoding_lib->toUTF8($value));
+                            
+                                    if (in_array($fields[$n], array('dob', 'admission_date', 'measurement_date'))) {
+                            
+                                        if ($parsed_value != '') {
+                            
+                                            // Normalize separators
+                                            $parsed_value = str_replace(array('/', '.'), '-', $parsed_value);
+                            
+                                            // Parse as d-m-Y
+                                            $date = DateTime::createFromFormat('d-m-Y', $parsed_value);
+                            
+                                            if ($date) {
+                            
+                                                // Store proper SQL format
+                                                $parsed_value = $date->format('Y-m-d');
+                            
+                                            } else {
+                            
+                                                $parsed_value = '0000-00-00';
+                                            }
+                            
+                                        } else {
+                            
+                                            $parsed_value = '0000-00-00';
+                                        }
+                                    }
+                            
+                                    $student_data[$i][$fields[$n]] = $parsed_value;
+                                }
+                            
                                 $student_data[$i]['is_active'] = 'yes';
+                            
                                 $n++;
                             }
 
-                            $roll_no = $student_data[$i]["roll_no"];
-                            $adm_no = $student_data[$i]["admission_no"];
-                            $mobile_no = $student_data[$i]["mobileno"];
-                            $email = $student_data[$i]["email"];
-                            $guardian_phone = $student_data[$i]["guardian_phone"];
-                            $guardian_email = $student_data[$i]["guardian_email"];
+                            $roll_no = isset($student_data[$i]["roll_no"]) ? $student_data[$i]["roll_no"] : "";
+                            $adm_no = isset($student_data[$i]["admission_no"]) ? $student_data[$i]["admission_no"] : "";
+                            $mobile_no = isset($student_data[$i]["mobileno"]) ? $student_data[$i]["mobileno"] : "";
+                            $email = isset($student_data[$i]["email"]) ? $student_data[$i]["email"] : "";
+                            $guardian_phone = isset($student_data[$i]["guardian_phone"]) ? $student_data[$i]["guardian_phone"] : "";
+                            $guardian_email = isset($student_data[$i]["guardian_email"]) ? $student_data[$i]["guardian_email"] : "";
 
-                                 if($this->form_validation->is_unique($adm_no, 'students.admission_no')){
-                                    
-                                    if(!empty($roll_no)){
+                            // Skip processing completely if it's an empty row in the CSV
+                            if (empty($adm_no)) {
+                                continue;
+                            }
 
-                                if ($this->student_model->check_rollno_exists($roll_no, 0, $class_id,$section)) {
+                            $student_exists = $this->db->get_where('students', array('admission_no' => $adm_no))->row();
+                            $insert_id = "";
+                            $is_existing = false;
 
-                             $this->session->set_flashdata('msg', '<div class="alert alert-danger text-center">Record already exists.</div>');
-                                $insert_id = "";
-                                }else{
+                            if (empty($student_exists)) {
+                                $insert_id = $this->student_model->add($student_data[$i]);
+                            } else {
+                                $insert_id = $student_exists->id;
+                                $is_existing = true;
+                            }
 
-                                      $insert_id = $this->student_model->add($student_data[$i]);
-                                }
-                            }else{
-                                  $insert_id = $this->student_model->add($student_data[$i]);
+                            if (!empty($insert_id)) {
+                                $session_check = $this->db->get_where('student_session', array('student_id' => $insert_id, 'session_id' => $session))->row();
                                 
-                                }
-                              
+                                if (empty($session_check)) {
+                                    if ($is_existing) {
+                                        $student_data[$i]['id'] = $insert_id;
+                                        $this->student_model->add($student_data[$i]);
+                                    }
 
-                                 }else{
-                                    $insert_id = "";
-                                 }
-                              
-                             
-                                if (!empty($insert_id)) {
                                     $data_new = array(
                                         'student_id' => $insert_id,
                                         'class_id' => $class_id,
@@ -620,48 +676,53 @@ class Student extends Admin_Controller {
                                         'session_id' => $session
                                     );
                                     $this->student_model->add_student_session($data_new);
-                                    $user_password = $this->role->get_random_password($chars_min = 6, $chars_max = 6, $use_upper_case = false, $include_numbers = true, $include_special_chars = false);
-                                    $sibling_id = $this->input->post('sibling_id');
-                                    $data_student_login = array(
-                                        'username' => $this->student_login_prefix . $insert_id,
-                                        'password' => $user_password,
-                                        'user_id' => $insert_id,
-                                        'role' => 'student'
-                                    );
-                                    $this->user_model->add($data_student_login);
-                                    $parent_password = $this->role->get_random_password($chars_min = 6, $chars_max = 6, $use_upper_case = false, $include_numbers = true, $include_special_chars = false);
-                                    $temp = $insert_id;
-                                    $data_parent_login = array(
-                                        'username' => $this->parent_login_prefix . $insert_id,
-                                        'password' => $parent_password,
-                                        'user_id' => $insert_id,
-                                        'role' => 'parent',
-                                        'childs' => $temp
-                                    );
-                                    $ins_id = $this->user_model->add($data_parent_login);
-                                    $update_student = array(
-                                        'id' => $insert_id,
-                                        'parent_id' => $ins_id
-                                    );
-                                    $this->student_model->add($update_student);
-                                    $sender_details = array('student_id' => $insert_id, 'contact_no' => $guardian_phone, 'email' => $guardian_email);
-                                    $this->mailsmsconf->mailsms('student_admission', $sender_details);
 
+                                    if (!$is_existing) {
+                                        $user_password = $this->role->get_random_password($chars_min = 6, $chars_max = 6, $use_upper_case = false, $include_numbers = true, $include_special_chars = false);
+                                        $sibling_id = $this->input->post('sibling_id');
+                                        $data_student_login = array(
+                                            'username' => $this->student_login_prefix . $insert_id,
+                                            'password' => $user_password,
+                                            'user_id' => $insert_id,
+                                            'role' => 'student'
+                                        );
+                                        $this->user_model->add($data_student_login);
+                                        $parent_password = $this->role->get_random_password($chars_min = 6, $chars_max = 6, $use_upper_case = false, $include_numbers = true, $include_special_chars = false);
+                                        $temp = $insert_id;
+                                        $data_parent_login = array(
+                                            'username' => $this->parent_login_prefix . $insert_id,
+                                            'password' => $parent_password,
+                                            'user_id' => $insert_id,
+                                            'role' => 'parent',
+                                            'childs' => $temp
+                                        );
+                                        $ins_id = $this->user_model->add($data_parent_login);
+                                        $update_student = array(
+                                            'id' => $insert_id,
+                                            'parent_id' => $ins_id
+                                        );
+                                        $this->student_model->add($update_student);
+                                        
+                                        // Ignore mailing errors to prevent script termination
+                                        try {
+                                            $sender_details = array('student_id' => $insert_id, 'contact_no' => $guardian_phone, 'email' => $guardian_email);
+                                            $this->mailsmsconf->mailsms('student_admission', $sender_details);
 
-                                    $student_login_detail = array('id' => $insert_id, 'credential_for' => 'student', 'username' => $this->student_login_prefix . $insert_id, 'password' => $user_password, 'contact_no' => $mobile_no, 'email' => $email);
-                                    $this->mailsmsconf->mailsms('login_credential', $student_login_detail);
+                                            $student_login_detail = array('id' => $insert_id, 'credential_for' => 'student', 'username' => $this->student_login_prefix . $insert_id, 'password' => $user_password, 'contact_no' => $mobile_no, 'email' => $email);
+                                            $this->mailsmsconf->mailsms('login_credential', $student_login_detail);
 
+                                            $parent_login_detail = array('id' => $insert_id, 'credential_for' => 'parent', 'username' => $this->parent_login_prefix . $insert_id, 'password' => $parent_password, 'contact_no' => $guardian_phone, 'email' => $guardian_email);
+                                            $this->mailsmsconf->mailsms('login_credential', $parent_login_detail);
+                                        } catch (Exception $e) { }
+                                    }
 
-                                    $parent_login_detail = array('id' => $insert_id, 'credential_for' => 'parent', 'username' => $this->parent_login_prefix . $insert_id, 'password' => $parent_password, 'contact_no' => $guardian_phone, 'email' => $guardian_email);
-                                    $this->mailsmsconf->mailsms('login_credential', $parent_login_detail);
-                              $data['csvData'] = $result;
-                                $this->session->set_flashdata('msg', '<div class="alert alert-success text-center">Students imported successfully</div>');
-                                $rowcount++;
-                                $this->session->set_flashdata('msg', '<div class="alert alert-success text-center">Total ' . count($result) . " records found in CSV file. Total " . $rowcount . ' records imported successfully.</div>');
-                                }else{
-
-                                      $this->session->set_flashdata('msg', '<div class="alert alert-danger text-center">Records already exists.</div>');
+                                    $data['csvData'] = $result;
+                                    $rowcount++;
+                                    $this->session->set_flashdata('msg', '<div class="alert alert-success text-center">Total ' . count($result) . " records found in CSV file. Total " . $rowcount . ' records imported successfully.</div>');
+                                } else {
+                                    $this->session->set_flashdata('msg', '<div class="alert alert-danger text-center">Records already exist for this session.</div>');
                                 }
+                            }
                                 
                            }
                         
@@ -734,7 +795,7 @@ class Student extends Admin_Controller {
          $setting_result = $this->setting_model->get();
        // $student_categorize = $setting_result[0]["student_categorize"];
        // $data["student_categorize"] = $student_categorize ;
-        $data["student_categorize"] = 'class';
+        $data["student_categorize"] = 'section';
         $data['classlist'] = $class;
         $category = $this->category_model->get();
         $data['categorylist'] = $category;
