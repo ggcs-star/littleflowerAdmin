@@ -62,6 +62,7 @@ if($this->rbac->hasPrivilege('import_student','can_view')){
                                                         ?>
                                                         <option value="<?php echo $class['id'] ?>"<?php if (set_value('class_id') == $class['id']) echo "selected=selected" ?>><?php echo $class['class'] ?></option>
                                                         <?php
+                                                        $count++;
                                                     }
                                                     ?>
                                                 </select>
@@ -131,6 +132,7 @@ if($this->rbac->hasPrivilege('import_student','can_view')){
                                                         ?>
                                                         <option value="<?php echo $category['id'] ?>" <?php if (set_value('category_id') == $category['id']) echo "selected=selected"; ?>><?php echo $category['category'] ?></option>
                                                         <?php
+                                                        $count++;
                                                     }
                                                     ?>
                                                 </select>
@@ -737,6 +739,7 @@ if($this->rbac->hasPrivilege('import_student','can_view')){
                                         ?>
                                         <option value="<?php echo $class['id'] ?>"<?php if (set_value('sibiling_class_id') == $class['id']) echo "selected=selected" ?>><?php echo $class['class'] ?></option>
                                         <?php
+                                        $count++;
                                     }
                                     ?>
                                 </select>
@@ -777,7 +780,7 @@ if($this->rbac->hasPrivilege('import_student','can_view')){
 
 <script type="text/javascript">
 
-    var base_url = '<?php echo base_url() ?>';
+
     $(document).ready(function () {
         var date_format = '<?php echo $result = strtr($this->customlib->getSchoolDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy',]) ?>';
         var class_id = $('#class_id').val();
@@ -813,6 +816,7 @@ if($this->rbac->hasPrivilege('import_student','can_view')){
 
         if (class_id != "" ) {
             $('#section_id').html("");
+            var base_url = '<?php echo base_url() ?>';
             var div_data = '<option value=""><?php echo $this->lang->line('select'); ?></option>';
               var url = "<?php $userdata = $this->customlib->getUserData();
          if(($userdata["role_id"] == 2)){ echo "getClassTeacherSection" ; }else{ echo "getByClass"; } ?>";
@@ -857,7 +861,7 @@ if($this->rbac->hasPrivilege('import_student','can_view')){
             var div_data = '<option value=""><?php echo $this->lang->line('select'); ?></option>';
             $.ajax({
                 type: "GET",
-                url: base_url + "admin/hostelroom/getRoom",
+                url: baseurl + "admin/hostelroom/getRoom",
                 data: {'hostel_id': hostel_id},
                 dataType: "json",
                  beforeSend: function(){

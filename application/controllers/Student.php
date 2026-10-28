@@ -231,7 +231,7 @@ class Student extends Admin_Controller {
         $this->form_validation->set_rules('dob', 'Date of Birth', 'trim|required|xss_clean');
         $this->form_validation->set_rules('class_id', 'Class', 'trim|required|xss_clean');
         $this->form_validation->set_rules('section_id', 'Section', 'trim|required|xss_clean');
-        $this->form_validation->set_rules('rte', 'RTE', 'trim|xss_clean');
+        $this->form_validation->set_rules('rte', 'RTE', 'trim|required|xss_clean');
         $this->form_validation->set_rules('guardian_name', 'Guardian Name', 'trim|required|xss_clean');
         $this->form_validation->set_rules('guardian_phone', 'Guardian Phone', 'trim|required|xss_clean');
         $this->form_validation->set_rules('admission_no', 'Admission No', 'trim|required|xss_clean|is_unique[students.admission_no]');
@@ -815,9 +815,13 @@ class Student extends Admin_Controller {
         $this->form_validation->set_rules('section_id', 'Section', 'trim|required|xss_clean');
         $this->form_validation->set_rules('gender', 'Gender', 'trim|required|xss_clean');
         $this->form_validation->set_rules('guardian_name', 'Guardian Name', 'trim|required|xss_clean');
-        $this->form_validation->set_rules('rte', 'RTE', 'trim|xss_clean');
+        $this->form_validation->set_rules('rte', 'RTE', 'trim|required|xss_clean');
         $this->form_validation->set_rules('guardian_phone', 'Guardian Phone', 'trim|required|xss_clean');
-        $this->form_validation->set_rules('roll_no', 'Roll No.', 'trim|xss_clean');
+        $this->form_validation->set_rules(
+                'roll_no', 'Roll No.', array('trim',
+            array('check_exists', array($this->student_model, 'valid_student_roll'))
+                )
+        );
 
         $this->form_validation->set_rules('file', 'Image', 'callback_handle_upload');
         if ($this->form_validation->run() == FALSE) {

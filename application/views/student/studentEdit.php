@@ -57,6 +57,7 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
                                                         }
                                                         ?>><?php echo $class['class'] ?></option>
                                                                 <?php
+                                                                $count++;
                                                             }
                                                             ?>
                                                 </select>
@@ -125,6 +126,7 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
                                                         ?>
                                                         <option value="<?php echo $category['id'] ?>" <?php if ($student['category_id'] == $category['id']) echo "selected =selected" ?>><?php echo $category['category']; ?></option>
                                                         <?php
+                                                        $count++;
                                                     }
                                                     ?>
                                                 </select>
@@ -674,7 +676,6 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
 </div>
 
 <script type="text/javascript">
-    var base_url = '<?php echo base_url() ?>';
     $(document).ready(function () {
         var date_format = '<?php echo $result = strtr($this->customlib->getSchoolDateFormat(), ['d' => 'dd', 'm' => 'mm', 'Y' => 'yyyy',]) ?>';
         var class_id = $('#class_id').val();
@@ -725,7 +726,7 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
 
             $.ajax({
                 type: "GET",
-                url: base_url + "student/getByClassAndSectionExcludeMe",
+                url: baseurl + "student/getByClassAndSectionExcludeMe",
                 data: {'class_id': class_id, 'section_id': section_id,'current_student_id':current_student_id},
                 dataType: "json",
                 beforeSend: function () {
@@ -756,6 +757,7 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
         function getSectionByClass(class_id, section_id, select_control) {
             if (class_id != "") {
                 $('#' + select_control).html("");
+                var base_url = '<?php echo base_url() ?>';
                 var div_data = '<option value=""><?php echo $this->lang->line('select'); ?></option>';
                 $.ajax({
                     type: "GET",
@@ -797,7 +799,7 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
                 var div_data = '<option value=""><?php echo $this->lang->line('select'); ?></option>';
                 $.ajax({
                     type: "GET",
-                    url: base_url + "admin/hostelroom/getRoom",
+                    url: baseurl + "admin/hostelroom/getRoom",
                     data: {'hostel_id': hostel_id},
                     dataType: "json",
                     beforeSend: function () {
@@ -888,6 +890,7 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
                                     ?>
                                     <option value="<?php echo $class['id'] ?>"<?php if (set_value('sibiling_class_id') == $class['id']) echo "selected=selected" ?>><?php echo $class['class'] ?></option>
                                     <?php
+                                    $count++;
                                 }
                                 ?>
                             </select>
@@ -969,7 +972,7 @@ $currency_symbol = $this->customlib->getSchoolCurrencyFormat();
 
             $.ajax({
                 type: "GET",
-                url: base_url + "student/getStudentRecordByID",
+                url: baseurl + "student/getStudentRecordByID",
                 data: {'student_id': student_id},
                 dataType: "json",
                 beforeSend: function () {
