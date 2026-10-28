@@ -572,6 +572,7 @@ class Student_model extends CI_Model {
         $roll_no = $this->input->post('roll_no');
         $student_id = $this->input->post('studentid');
         $class = $this->input->post('class_id');
+        $session_id = $this->setting_model->getCurrentSession();
 
         if ($roll_no != "") {
 
@@ -579,7 +580,7 @@ class Student_model extends CI_Model {
                 $student_id = 0;
             }
 
-            if ($this->check_rollno_exists($roll_no, $student_id, $class)) {
+            if ($this->check_rollno_exists($roll_no, $student_id, $class, $session_id)) {
                 $this->form_validation->set_message('check_exists', 'Roll Number should be unique at Class level');
                 return FALSE;
             } else {
@@ -589,10 +590,10 @@ class Student_model extends CI_Model {
         return TRUE;
     }
 
-    function check_rollno_exists($roll_no, $student_id, $class) {
+    function check_rollno_exists($roll_no, $student_id, $class, $session_id) {
 
         if ($student_id != 0) {
-            $data = array('students.id != ' => $student_id, 'student_session.class_id' => $class, 'students.roll_no' => $roll_no);
+            $data = array('students.id != ' => $student_id, 'student_session.class_id' => $class, 'student_session.session_id' => $session_id, 'students.roll_no' => $roll_no);
             $query = $this->db->where($data)->join("student_session", "students.id = student_session.student_id")->get('students');
             if ($query->num_rows() > 0) {
                 return TRUE;
@@ -601,7 +602,7 @@ class Student_model extends CI_Model {
             }
         } else {
 
-            $this->db->where(array('class_id' => $class, 'roll_no' => $roll_no));
+            $this->db->where(array('class_id' => $class, 'session_id' => $session_id, 'roll_no' => $roll_no));
             $query = $this->db->join("student_session", "students.id = student_session.student_id")->get('students');
             if ($query->num_rows() > 0) {
                 return TRUE;
